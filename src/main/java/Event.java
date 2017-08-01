@@ -7,7 +7,7 @@ public class Event {
     }
 
     public boolean isNMinOld(int n) {
-        return System.currentTimeMillis() - instanciationTime > n *60000L;
+        return System.currentTimeMillis() - instanciationTime > n * 60000L;
     }
 
     public boolean isNHourOld(int n) {
@@ -16,5 +16,17 @@ public class Event {
 
     public boolean is1DayOld(int n) {
         return System.currentTimeMillis() - instanciationTime > n * 86400000L;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Event)
+            return this.repo.equals(((Event) obj).repo);
+        else return super.equals(obj);
+    }
+
+    @Override
+    public String toString() {
+        return "time: " + instanciationTime + " Repo: [" + repo.toString() + "]";
     }
 }
