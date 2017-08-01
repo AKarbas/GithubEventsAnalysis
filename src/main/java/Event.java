@@ -1,5 +1,8 @@
 public class Event {
+    String type;
+    Payload payload;
     Repository repo;
+    User actor;
     private long instanciationTime;
 
     public Event() {
@@ -27,6 +30,10 @@ public class Event {
 
     @Override
     public String toString() {
-        return "time: " + instanciationTime + " Repo: [" + repo.toString() + "]";
+        return "time: " + instanciationTime
+                + " Type: [" + type + "]"
+                + " Repo: [" + repo.toString() + "]"
+                + " User: [" + actor.toString() + "]"
+                + " Lang: " + payload.pull_request.head.repo.language;
     }
 }

@@ -3,6 +3,7 @@ import com.satori.rtm.model.AnyJson;
 import com.satori.rtm.model.SubscriptionData;
 
 import java.io.PrintStream;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -15,9 +16,9 @@ public class Main {
     private static RemoverThread eraser = new RemoverThread();
     private static outputThread outputManager = new outputThread();
     private static ConcurrentLinkedQueue<Event> eventHistory = new ConcurrentLinkedQueue<Event>();
-    private static StatsMap prev1Min = new StatsMap("1Min");
-    private static StatsMap prev2Min = new StatsMap("2Min");
-    private static StatsMap prev3Min = new StatsMap("3Min");
+    private static StatsMap prev10Min = new StatsMap("10Min");
+    private static StatsMap prev20Min = new StatsMap("20Min");
+    private static StatsMap prev30Min = new StatsMap("30Min");
 
     public static void main(String[] args) {
         receiver.start();
@@ -40,14 +41,15 @@ public class Main {
             SubscriptionAdapter listener = new SubscriptionAdapter() {
                 @Override
                 public void onSubscriptionData(SubscriptionData data) {
-                    for (AnyJson json : data.getMessages()) {
-                        Event newEvent = json.convertToType(Event.class);
-                        eventHistory.add(newEvent);
-                        prev1Min.add(newEvent.repo);
-                        prev2Min.add(newEvent.repo);
-//                        System.out.println(newEvent);
-                        prev3Min.add(newEvent.repo);
-                    }
+                    try {
+                        for (AnyJson json : data.getMessages()) {
+                            Event newEvent = json.convertToType(Event.class);
+                            eventHistory.add(newEvent);
+                            prev10Min.add(newEvent);
+                            prev20Min.add(newEvent);
+                            prev30Min.add(newEvent);
+                        }
+                    } catch (Exception e) { e.printStackTrace(); }
                 }
             };
             client.createSubscription(channel, SubscriptionMode.SIMPLE, listener);
@@ -65,6 +67,7 @@ public class Main {
                     e.printStackTrace();
                 }
 
+            remover:
             while (true) {
                 try {
                     Thread.sleep(700);
@@ -77,16 +80,19 @@ public class Main {
                 boolean flag = true;
                 while (flag) {
                     Event e = iterator.next();
-                    if (e.isNMinOld(3)) {
-                        prev3Min.remove(e.repo);
+                    if (e == null)
+                        continue remover;
+                    if (e.isNMinOld(30)) {
+                        prev30Min.remove(e);
                         eventHistory.poll();
                         iterator = eventHistory.iterator();
-                    } else if (e.isNMinOld(2))
-                        prev2Min.remove(e.repo);
-                    else if (e.isNMinOld(1))
-                        prev1Min.remove(e.repo);
-                    else
+                    } else if (e.isNMinOld(20)) {
+                        prev20Min.remove(e);
+                    } else if (e.isNMinOld(10)) {
+                        prev10Min.remove(e);
+                    } else {
                         flag = false;
+                    }
                 }
             }
         }
@@ -102,11 +108,11 @@ public class Main {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                System.out.println("output:");
+                System.out.println("output@ " + new Date().toString() + " : ");
                 StringBuilder output = new StringBuilder();
-                output.append(prev1Min.toString());
-                output.append(prev2Min.toString());
-                output.append(prev3Min.toString());
+                output.append(prev10Min.toString());
+                output.append(prev20Min.toString());
+                output.append(prev30Min.toString());
                 outputStream.printf("%s\n", output.toString());
             }
         }
