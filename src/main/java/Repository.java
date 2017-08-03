@@ -1,6 +1,10 @@
-public class Repository {
+import java.io.Serializable;
+
+public class Repository implements Serializable {
     String name = "";
     String url = "";
+
+    static long serialVerisonUID = 1974L;
 
     @Override
     public boolean equals(Object obj) {

@@ -1,11 +1,16 @@
 import com.satori.rtm.*;
 import com.satori.rtm.model.AnyJson;
 import com.satori.rtm.model.SubscriptionData;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
+import org.mapdb.HTreeMap;
+import org.mapdb.Serializer;
 
+import java.io.File;
 import java.io.PrintStream;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 
 
 public class Main {
@@ -15,15 +20,72 @@ public class Main {
     private static ReceiverThread receiver = new ReceiverThread();
     private static RemoverThread eraser = new RemoverThread();
     private static outputThread outputManager = new outputThread();
-    private static ConcurrentLinkedQueue<Event> eventHistory = new ConcurrentLinkedQueue<Event>();
-    private static StatsMap prev10Min = new StatsMap("10Min");
-    private static StatsMap prev20Min = new StatsMap("20Min");
-    private static StatsMap prev30Min = new StatsMap("30Min");
+    private static StatsMap prev1Min = new StatsMap("1Min");
+    private static StatsMap prev2Min = new StatsMap("2Min");
+    private static StatsMap prev3Min = new StatsMap("3Min");
+    private static DB db;
+    private static HTreeMap eventHistory;
+    private static File DBFile = new File("DBs/mapDB.db");
 
     public static void main(String[] args) {
+        DBMaker.Maker maker = DBMaker
+                .fileDB(DBFile)
+                .closeOnJvmShutdown()
+                .transactionEnable()
+                .fileMmapEnableIfSupported()
+                .allocateStartSize(512 * 1024 * 1024)     // 512MB
+                .allocateIncrement(256 * 1024 * 1024);     // 256MB;
+        try {
+            db = maker.make();
+        } catch (Exception e) {
+            try {
+                DBFile.createNewFile();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            db = maker.make();
+        }
+        eventHistory = db
+                .hashMap("EventQueue")
+                .keySerializer(Serializer.LONG)
+                .expireAfterCreate(24, TimeUnit.HOURS)
+                .layout(16, 32, 8)
+                .createOrOpen();
+        if (!eventHistory.isEmpty()) {
+            Iterator<Long> iterator = eventHistory.keySet().iterator();
+            while (iterator.hasNext()) {
+                long t = iterator.next();
+                Event e = (Event) eventHistory.get(t);
+                if (e.isNMinOld(3)) {
+                    long tmp = t;
+                    if (iterator.hasNext())
+                        t = iterator.next();
+                    eventHistory.remove(tmp);
+                } else break;
+            }
+            db.commit();
+            iterator = eventHistory.keySet().iterator();
+            while (iterator.hasNext()) {
+                Object t = iterator.next();
+                Event e = (Event) eventHistory.get(t);
+                if (!e.isNMinOld(1)) {
+                    prev3Min.add(e);
+                    prev2Min.add(e);
+                    prev1Min.add(e);
+                } else if (!e.isNMinOld(2)) {
+                    prev3Min.add(e);
+                    prev2Min.add(e);
+                } else if (!e.isNMinOld(3)) {
+                    prev3Min.add(e);
+                } else {
+                    break;
+                }
+            }
+        }
+        outputManager.start();
         receiver.start();
         eraser.start();
-        outputManager.start();
+
     }
 
     private static class ReceiverThread extends Thread {
@@ -44,12 +106,15 @@ public class Main {
                     try {
                         for (AnyJson json : data.getMessages()) {
                             Event newEvent = json.convertToType(Event.class);
-                            eventHistory.add(newEvent);
-                            prev10Min.add(newEvent);
-                            prev20Min.add(newEvent);
-                            prev30Min.add(newEvent);
+                            eventHistory.put(newEvent.instanciationTime, newEvent);
+                            db.commit();
+                            prev1Min.add(newEvent);
+                            prev2Min.add(newEvent);
+                            prev3Min.add(newEvent);
                         }
-                    } catch (Exception e) { e.printStackTrace(); }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             };
             client.createSubscription(channel, SubscriptionMode.SIMPLE, listener);
@@ -67,7 +132,7 @@ public class Main {
                     e.printStackTrace();
                 }
 
-            remover:
+
             while (true) {
                 try {
                     Thread.sleep(700);
@@ -75,25 +140,26 @@ public class Main {
                     e.printStackTrace();
                 }
 
-                Iterator<Event> iterator = eventHistory.iterator();
+                Iterator<Long> iterator = eventHistory.keySet().iterator();
 
                 boolean flag = true;
-                while (flag) {
-                    Event e = iterator.next();
-                    if (e == null)
-                        continue remover;
-                    if (e.isNMinOld(30)) {
-                        prev30Min.remove(e);
-                        eventHistory.poll();
-                        iterator = eventHistory.iterator();
-                    } else if (e.isNMinOld(20)) {
-                        prev20Min.remove(e);
-                    } else if (e.isNMinOld(10)) {
-                        prev10Min.remove(e);
+                while (flag && iterator.hasNext()) {
+                    long t = iterator.next();
+                    Event e = (Event) eventHistory.get(t);
+                    if (e.isNMinOld(3)) {
+                        prev3Min.remove(e);
+                        long tmp = t;
+                        t = iterator.next();
+                        eventHistory.remove(tmp);
+                    } else if (e.isNMinOld(2)) {
+                        prev2Min.remove(e);
+                    } else if (e.isNMinOld(1)) {
+                        prev1Min.remove(e);
                     } else {
                         flag = false;
                     }
                 }
+                db.commit();
             }
         }
     }
@@ -103,20 +169,22 @@ public class Main {
         public void run() {
             PrintStream outputStream = System.out;
             while (true) {
+                System.out.println("output@ " + new Date().toString() + " : ");
+                StringBuilder output = new StringBuilder();
+                output.append(prev1Min.toString());
+                output.append("\n");
+                output.append(prev2Min.toString());
+                output.append("\n");
+                output.append(prev3Min.toString());
+                output.append("\n");
+                outputStream.printf("%s\n", output.toString());
                 try {
                     Thread.sleep(15000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                System.out.println("output@ " + new Date().toString() + " : ");
-                StringBuilder output = new StringBuilder();
-                output.append(prev10Min.toString());
-                output.append(prev20Min.toString());
-                output.append(prev30Min.toString());
-                outputStream.printf("%s\n", output.toString());
             }
         }
     }
 
 }
-//Saves and Deletes.

@@ -1,9 +1,12 @@
-public class Event {
+import java.io.Serializable;
+
+public class Event implements Serializable {
+    static final long serialVersionUID = 1973L;
     String type;
     Payload payload;
     Repository repo;
     User actor;
-    private long instanciationTime;
+    long instanciationTime;
 
     public Event() {
         instanciationTime = System.currentTimeMillis();

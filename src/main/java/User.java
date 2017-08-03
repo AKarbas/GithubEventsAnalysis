@@ -1,6 +1,10 @@
-public class User {
+import java.io.Serializable;
+
+public class User implements Serializable {
     String display_login;
     String url;
+
+    static long serialVerisonUID = 1975L;
 
     @Override
     public boolean equals(Object obj) {

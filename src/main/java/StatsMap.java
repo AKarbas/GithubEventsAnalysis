@@ -74,13 +74,15 @@ public class StatsMap {
 
     public void remove(Event e) {
         remove(e.repo);
-        remove(e.payload.pull_request.head.repo.language);
+        if (e.type.equals("PullRequestEvent"))
+            remove(e.payload.pull_request.head.repo.language);
         remove(e.actor);
 
         sum--;
     }
 
     private void remove(User user) {
+        if (!userData.containsKey(user)) return;
         if (userData.get(user) == 1)
             userData.remove(user);
         else
@@ -88,6 +90,7 @@ public class StatsMap {
     }
 
     private void remove(String lang) {
+        if (lang == null || !langData.containsKey(lang)) return;
         if (langData.get(lang) == 1)
             langData.remove(lang);
         else
@@ -96,6 +99,7 @@ public class StatsMap {
 
 
     private void remove(Repository repo) {
+        if (!repoData.containsKey(repo)) return;
         if (repoData.get(repo) == 1)
             repoData.remove(repo);
         else

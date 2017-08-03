@@ -11,15 +11,29 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Maven: org.mapdb:mapdb:3.0.5" level="project" />
+    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.0.7" level="project" />
+    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-runtime:1.0.7" level="project" />
+    <orderEntry type="library" name="Maven: net.jpountz.lz4:lz4:1.3.0" level="project" />
+    <orderEntry type="library" name="Maven: org.mapdb:elsa:3.0.0-M5" level="project" />
+    <orderEntry type="library" name="Maven: com.google.guava:guava:19.0" level="project" />
     <orderEntry type="library" name="Maven: com.satori:satori-rtm-sdk-jackson2:1.0.3" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.8.8" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.8.8" level="project" />
     <orderEntry type="library" name="Maven: com.satori:satori-rtm-sdk-core:1.0.3" level="project" />
     <orderEntry type="library" name="Maven: com.neovisionaries:nv-websocket-client:1.31" level="project" />
-    <orderEntry type="library" name="Maven: com.google.guava:guava:20.0" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.8.8" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-nop:1.7.25" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.25" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: junit:junit:3.8.1" level="project" />
+    <orderEntry type="library" name="Maven: org.mapdb:mapdb:3.0.5" level="project" />
+    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.0.7" level="project" />
+    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-runtime:1.0.7" level="project" />
+    <orderEntry type="library" name="Maven: net.jpountz.lz4:lz4:1.3.0" level="project" />
+    <orderEntry type="library" name="Maven: org.mapdb:elsa:3.0.0-M5" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.collections:eclipse-collections:7.0.0" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.collections:eclipse-collections-api:7.0.0" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.collections:eclipse-collections-forkjoin:7.0.0" level="project" />
+    <orderEntry type="library" name="Maven: com.google.guava:guava:19.0" level="project" />
   </component>
 </module>
